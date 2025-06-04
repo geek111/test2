@@ -1,0 +1,4 @@
+{
+  "shopa": "price_tracker.shops.shop_a:ShopA",
+  "shopb": "price_tracker.shops.shop_b:ShopB"
+}
