@@ -29,6 +29,12 @@ def cmd_add_product(args: argparse.Namespace) -> None:
     print(f"Added product '{args.name}' for shop '{args.shop}'")
 
 
+def cmd_set_price(args: argparse.Namespace) -> None:
+    tracker = get_tracker()
+    tracker.set_price(args.url, args.price)
+    print(f"Set price for '{args.url}' -> {args.price}")
+
+
 def cmd_run(args: argparse.Namespace) -> None:
     tracker = get_tracker()
     tracker.run()
@@ -55,6 +61,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_product_p.add_argument("url")
     add_product_p.add_argument("shop")
     add_product_p.set_defaults(func=cmd_add_product)
+
+    set_price_p = sub.add_parser("set-price", help="Manually set product price")
+    set_price_p.add_argument("url", help="Product URL")
+    set_price_p.add_argument("price", type=float)
+    set_price_p.set_defaults(func=cmd_set_price)
 
     return parser
 

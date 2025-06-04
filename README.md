@@ -38,3 +38,9 @@ python3 main.py remove-shop shopa
 ```bash
 python3 main.py add-product "Nazwa" "http://adres/produktu" shopa
 ```
+
+### Ręczna edycja ceny
+
+```bash
+python3 main.py set-price "http://adres/produktu" 123.45
+```

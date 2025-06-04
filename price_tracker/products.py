@@ -44,3 +44,7 @@ class ProductStore:
         product.price_history.append(new_price)
         product.last_price = new_price
         self.save()
+
+    def set_price(self, product: Product, new_price: float) -> None:
+        """Manually set price for ``product`` and record it in history."""
+        self.update_price(product, new_price)

@@ -40,6 +40,11 @@ class PriceTracker:
                           price_history=[], last_price=0.0)
         self.store.add(product)
 
+    def set_price(self, url: str, price: float) -> None:
+        """Manually set the price for an existing product."""
+        product = self.store.find_by_url(url)
+        self.store.set_price(product, price)
+
     def check_prices(self) -> None:
         for product in self.store.products:
             shop = self.shops.get(product.shop)
