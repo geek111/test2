@@ -22,7 +22,13 @@ INDEX_TEMPLATE = """
 <h1>Tracked Products</h1>
 <ul>
   {% for p in products %}
-  <li>{{ p.name }} - {{ p.last_price }} ({{ p.shop }})</li>
+  <li>
+    {{ p.name }} - {{ p.last_price }} ({{ p.shop }})
+    <form method="post" action="{{ url_for('delete_product') }}" style="display:inline">
+      <input type="hidden" name="url" value="{{ p.url }}">
+      <button type="submit">Delete</button>
+    </form>
+  </li>
   {% endfor %}
 </ul>
 <h2>Add Product</h2>
@@ -38,20 +44,50 @@ INDEX_TEMPLATE = """
   <button type="submit">Add</button>
 </form>
 <p><a href="{{ url_for('check_now') }}">Check prices now</a></p>
+<p>
+  {% if paused %}
+  <a href="{{ url_for('resume') }}">Resume checking</a>
+  {% else %}
+  <a href="{{ url_for('pause') }}">Pause checking</a>
+  {% endif %}
+</p>
 """
 
 @app.route('/')
 def index():
-    return render_template_string(INDEX_TEMPLATE, products=tracker.store.products, shops=tracker.shops.keys())
+    return render_template_string(
+        INDEX_TEMPLATE,
+        products=tracker.store.products,
+        shops=tracker.shops.keys(),
+        paused=tracker.paused,
+    )
 
 @app.route('/add', methods=['POST'])
 def add_product():
     tracker.add_product(request.form['name'], request.form['url'], request.form['shop'])
     return redirect(url_for('index'))
 
+
+@app.route('/delete', methods=['POST'])
+def delete_product():
+    tracker.remove_product(request.form['url'])
+    return redirect(url_for('index'))
+
 @app.route('/check')
 def check_now():
     tracker.check_prices()
+    return redirect(url_for('index'))
+
+
+@app.route('/pause')
+def pause():
+    tracker.pause()
+    return redirect(url_for('index'))
+
+
+@app.route('/resume')
+def resume():
+    tracker.resume()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

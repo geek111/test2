@@ -16,6 +16,7 @@ class PriceTracker:
         self.shops: Dict[str, ShopModule] = {}
         self.interval = interval
         self.email = email
+        self.paused = False
 
     def register_shop(self, name: str, shop: ShopModule) -> None:
         self.shops[name] = shop
@@ -24,6 +25,10 @@ class PriceTracker:
         product = Product(name=name, url=url, shop=shop,
                           price_history=[], last_price=0.0)
         self.store.add(product)
+
+    def remove_product(self, url: str) -> None:
+        """Remove a tracked product by URL."""
+        self.store.remove(url)
 
     def check_prices(self) -> None:
         for product in self.store.products:
@@ -53,7 +58,16 @@ class PriceTracker:
         else:
             print(msg)
 
+    def pause(self) -> None:
+        """Pause automatic price checking."""
+        self.paused = True
+
+    def resume(self) -> None:
+        """Resume automatic price checking."""
+        self.paused = False
+
     def run(self) -> None:
         while True:
-            self.check_prices()
+            if not self.paused:
+                self.check_prices()
             time.sleep(self.interval)

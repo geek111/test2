@@ -44,3 +44,12 @@ class ProductStore:
         product.price_history.append(new_price)
         product.last_price = new_price
         self.save()
+
+    def remove(self, url: str) -> None:
+        """Remove a product matching ``url`` from the store."""
+        for i, prod in enumerate(self.products):
+            if prod.url == url:
+                del self.products[i]
+                self.save()
+                return
+        raise ValueError(f'Product with url {url} not found')
