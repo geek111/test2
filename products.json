@@ -1,0 +1,18 @@
+{
+  "products": [
+    {
+      "name": "Przykładowy produkt A",
+      "url": "http://example.com/shopa/product1",
+      "shop": "shopa",
+      "price_history": [99.99],
+      "last_price": 99.99
+    },
+    {
+      "name": "Przykładowy produkt B",
+      "url": "http://example.com/shopb/product2",
+      "shop": "shopb",
+      "price_history": [199.99],
+      "last_price": 199.99
+    }
+  ]
+}
