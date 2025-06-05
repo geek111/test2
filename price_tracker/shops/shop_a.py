@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from .base import ShopModule
+from .generic import parse_price
 
 class ShopA(ShopModule):
     """Example shop implementation."""
@@ -11,7 +12,5 @@ class ShopA(ShopModule):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         # Example: price contained in span with class 'price'
-        price_text = soup.select_one('span.price').text.strip()
-        # Remove currency symbols and convert to float
-        price = float(price_text.replace('$', '').replace(',', ''))
-        return price
+        price_text = soup.select_one('span.price').text
+        return parse_price(price_text)

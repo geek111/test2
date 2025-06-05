@@ -25,6 +25,13 @@ python3 web.py
 Domyślnie lista produktów znajduje się w pliku `products.json`. Moduły sklepów znajdują się w katalogu `price_tracker/shops` i dziedziczą po klasie `ShopModule`.
 Konfiguracja sklepów przechowywana jest w pliku `shops.json` i może być modyfikowana z poziomu interfejsu WWW.
 
+### Format cen
+
+Aplikacja obsługuje ceny zapisywane w formacie europejskim, np. `1 234,56 zł`.
+Funkcja `parse_price` usuwa symbole walut, spacje oddzielające tysiące i
+zamienia przecinek na kropkę, dzięki czemu poprawnie działa zarówno dla
+notacji amerykańskiej, jak i europejskiej.
+
 ### Zarządzanie przez Web GUI
 
 - Dodawanie i usuwanie produktów odbywa się z poziomu listy produktów. Każdy wiersz ma przycisk **Delete**.
