@@ -2,7 +2,9 @@ from threading import Thread
 import re
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request, redirect, url_for, render_template_string
+from flask import Flask, request, redirect, url_for, render_template_string, jsonify
+
+from price_tracker.shops.generic import parse_price
 
 from price_tracker.tracker import PriceTracker
 
@@ -37,6 +39,7 @@ INDEX_TEMPLATE = """
   URL: <input name="url" id="url"><br>
   CSS selector: <input name="selector" id="selector">
   <button type="button" onclick="detectSelector()">Pobierz selector</button><br>
+  Price: <input name="price" id="price" readonly><br>
   Shop:
   <select name="shop">
     {% for s in shops %}
@@ -57,8 +60,13 @@ INDEX_TEMPLATE = """
 function detectSelector() {
   const url = document.getElementById('url').value;
   fetch('/detect_selector?url=' + encodeURIComponent(url))
-    .then(r => r.text())
-    .then(sel => { document.getElementById('selector').value = sel; })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('selector').value = data.selector;
+      if (data.price !== undefined) {
+        document.getElementById('price').value = data.price;
+      }
+    })
     .catch(() => alert('Failed to detect selector'));
 }
 </script>
@@ -150,11 +158,18 @@ def delete_shop(name):
 
 @app.route('/add', methods=['POST'])
 def add_product():
+    price_str = request.form.get('price', '')
+    try:
+        price_val = parse_price(price_str) if price_str else 0.0
+    except Exception:
+        price_val = 0.0
+
     tracker.add_product(
         request.form['name'],
         request.form['url'],
         request.form['shop'],
-        request.form.get('selector', '')
+        request.form.get('selector', ''),
+        price_val
     )
     return redirect(url_for('index'))
 
@@ -210,7 +225,9 @@ def detect_selector():
         selector += f"#{elem.get('id')}"
     elif elem.get('class'):
         selector += '.' + '.'.join(elem.get('class'))
-    return selector
+
+    price_value = parse_price(str(element))
+    return jsonify({'selector': selector, 'price': price_value})
 
 if __name__ == '__main__':
     app.run()
