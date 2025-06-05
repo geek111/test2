@@ -72,8 +72,8 @@ class PriceTracker:
         if name in self.shops:
             del self.shops[name]
 
-    def add_product(self, name: str, url: str, shop: str) -> None:
-        product = Product(name=name, url=url, shop=shop,
+    def add_product(self, name: str, url: str, shop: str, selector: str) -> None:
+        product = Product(name=name, url=url, shop=shop, selector=selector,
                           price_history=[], last_price=0.0)
         self.store.add(product)
 
@@ -83,10 +83,7 @@ class PriceTracker:
 
     def check_prices(self) -> None:
         for product in self.store.products:
-            shop = self.shops.get(product.shop)
-            if not shop:
-                print(f'Shop {product.shop} not registered')
-                continue
+            shop = GenericShop(product.selector)
             try:
                 price = shop.get_price(product.url)
             except Exception as exc:

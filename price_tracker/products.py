@@ -9,6 +9,7 @@ class Product:
     name: str
     url: str
     shop: str
+    selector: str = ''
     price_history: List[float] = field(default_factory=list)
     last_price: float = 0.0
 
@@ -24,7 +25,11 @@ class ProductStore:
             self.products = []
             return
         data = json.loads(self.path.read_text())
-        self.products = [Product(**item) for item in data.get('products', [])]
+        self.products = []
+        for item in data.get('products', []):
+            if 'selector' not in item:
+                item['selector'] = ''
+            self.products.append(Product(**item))
 
     def save(self) -> None:
         data = {'products': [vars(p) for p in self.products]}

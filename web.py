@@ -1,4 +1,7 @@
 from threading import Thread
+import re
+import requests
+from bs4 import BeautifulSoup
 from flask import Flask, request, redirect, url_for, render_template_string
 
 from price_tracker.tracker import PriceTracker
@@ -31,7 +34,9 @@ INDEX_TEMPLATE = """
 <h2>Add Product</h2>
 <form method="post" action="{{ url_for('add_product') }}">
   Name: <input name="name"><br>
-  URL: <input name="url"><br>
+  URL: <input name="url" id="url"><br>
+  CSS selector: <input name="selector" id="selector">
+  <button type="button" onclick="detectSelector()">Pobierz selector</button><br>
   Shop:
   <select name="shop">
     {% for s in shops %}
@@ -48,6 +53,15 @@ INDEX_TEMPLATE = """
   <a href="{{ url_for('pause') }}">Pause checking</a>
   {% endif %}
 </p>
+<script>
+function detectSelector() {
+  const url = document.getElementById('url').value;
+  fetch('/detect_selector?url=' + encodeURIComponent(url))
+    .then(r => r.text())
+    .then(sel => { document.getElementById('selector').value = sel; })
+    .catch(() => alert('Failed to detect selector'));
+}
+</script>
 """
 
 SHOPS_TEMPLATE = """
@@ -136,7 +150,12 @@ def delete_shop(name):
 
 @app.route('/add', methods=['POST'])
 def add_product():
-    tracker.add_product(request.form['name'], request.form['url'], request.form['shop'])
+    tracker.add_product(
+        request.form['name'],
+        request.form['url'],
+        request.form['shop'],
+        request.form.get('selector', '')
+    )
     return redirect(url_for('index'))
 
 
@@ -161,6 +180,31 @@ def pause():
 def resume():
     tracker.resume()
     return redirect(url_for('index'))
+
+
+@app.route('/detect_selector')
+def detect_selector():
+    url = request.args.get('url')
+    if not url:
+        return 'URL required', 400
+    try:
+        resp = requests.get(url)
+        resp.raise_for_status()
+    except Exception as exc:
+        return str(exc), 400
+
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    pattern = re.compile(r'\d+[\.,]\d+\s*(?:zł|pln|eur|€|usd|\$)?', re.I)
+    element = soup.find(string=pattern)
+    if not element:
+        return '', 404
+    elem = element.parent
+    selector = elem.name
+    if elem.get('id'):
+        selector += f"#{elem.get('id')}"
+    elif elem.get('class'):
+        selector += '.' + '.'.join(elem.get('class'))
+    return selector
 
 if __name__ == '__main__':
     app.run()
