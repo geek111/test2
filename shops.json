@@ -1,0 +1,6 @@
+{
+  "shops": {
+    "shopa": "span.price",
+    "shopb": "div#product-price"
+  }
+}
