@@ -210,30 +210,8 @@ def detect_selector():
         return str(exc), 400
 
     soup = BeautifulSoup(resp.text, 'html.parser')
-    pattern = re.compile(r'\d+[\.,]\d+\s*(?:zł|pln|eur|€|usd|\$)?', re.I)
 
-    # Ignore matches located inside <script> or <style> tags
-    element = None
-    price_value = None
-    for el in soup.find_all(string=pattern):
-        if el.parent.name not in ('script', 'style'):
-            try:
-                price_value = parse_price(str(el))
-            except Exception:
-                continue
-            element = el
-            break
-
-    if element is not None:
-        elem = element.parent
-        selector = elem.name
-        if elem.get('id'):
-            selector += f"#{elem.get('id')}"
-        elif elem.get('class'):
-            selector += '.' + '.'.join(elem.get('class'))
-        return jsonify({'selector': selector, 'price': price_value})
-
-    # Fallback to JSON-LD scripts
+    # First try JSON-LD scripts which often contain the exact price
     for script in soup.find_all('script', type='application/ld+json'):
         if not script.string:
             continue
@@ -247,6 +225,32 @@ def detect_selector():
                 'selector': "script[type='application/ld+json']",
                 'price': parse_price(str(val))
             })
+
+    pattern = re.compile(r'\d+[\.,]\d+\s*(?:zł|pln|eur|€|usd|\$)?', re.I)
+
+    # Ignore matches located inside <script> or <style> tags
+    element = None
+    price_value = None
+    for el in soup.find_all(string=pattern):
+        if el.parent.name in ('script', 'style'):
+            continue
+        try:
+            price_value = parse_price(str(el))
+        except Exception:
+            continue
+        if price_value < 0:
+            continue
+        element = el
+        break
+
+    if element is not None:
+        elem = element.parent
+        selector = elem.name
+        if elem.get('id'):
+            selector += f"#{elem.get('id')}"
+        elif elem.get('class'):
+            selector += '.' + '.'.join(elem.get('class'))
+        return jsonify({'selector': selector, 'price': price_value})
 
     return '', 404
 

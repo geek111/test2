@@ -15,16 +15,20 @@ def parse_price(text: str) -> float:
     """
     cleaned = text.strip()
     cleaned = re.sub(r"(?i)(zł|pln|eur|euro|usd|\$|€|gbp|£)", "", cleaned)
-    cleaned = cleaned.replace("\xa0", "").replace(" ", "")
-    cleaned = cleaned.replace(",", ".")
-    cleaned = re.sub(r"[^0-9.\-]", "", cleaned)
-    cleaned = cleaned.strip(".")
-    if cleaned.count(".") > 1:
-        last = cleaned.rfind(".")
-        cleaned = cleaned[:last].replace(".", "") + cleaned[last:]
-    if not cleaned or cleaned == ".":
+    cleaned = cleaned.replace("\xa0", " ")
+    match = re.search(r"-?\d[\d .,]*\d", cleaned)
+    if not match:
         raise ValueError(f"Could not parse price: {text}")
-    return float(cleaned)
+
+    number = match.group(0)
+    number = number.replace(" ", "").replace(",", ".")
+    number = re.sub(r"[^0-9.\-]", "", number)
+    number = number.strip(".")
+    if number.count(".") > 1:
+        last = number.rfind(".")
+        number = number[:last].replace(".", "") + number[last:]
+
+    return float(number)
 
 
 def _find_price_in_json(data):

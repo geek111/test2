@@ -32,7 +32,9 @@ Funkcja `parse_price` usuwa symbole walut oraz separatory tysięcy (spacje lub
 kropki), zamienia przecinek na kropkę i usuwa ewentualne znaki interpunkcyjne
 po wartości. Dzięki temu poprawnie działa zarówno dla notacji amerykańskiej,
 jak i europejskiej. Dodatkowo aplikacja potrafi pobrać cenę zapisaną w
-skryptach JSON‑LD (`<script type="application/ld+json">`).
+  skryptach JSON‑LD (`<script type="application/ld+json">`).
+  Wyszukiwanie w takich skryptach wykonywane jest priorytetowo,
+  dzięki czemu unikamy przypadkowego dopasowania liczb niezwiązanych z ceną.
 
 ### Zarządzanie przez Web GUI
 
