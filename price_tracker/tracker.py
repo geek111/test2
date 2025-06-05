@@ -16,6 +16,7 @@ class PriceTracker:
         self.shops: Dict[str, ShopModule] = {}
         self.interval = interval
         self.email = email
+        # flag used by ``run`` to control automatic price checks
         self.paused = False
 
     def register_shop(self, name: str, shop: ShopModule) -> None:
