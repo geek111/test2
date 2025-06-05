@@ -45,6 +45,16 @@ class ProductStore:
         product.last_price = new_price
         self.save()
 
+    def remove(self, url: str) -> None:
+        """Remove a product matching ``url`` from the store."""
+        for i, prod in enumerate(self.products):
+            if prod.url == url:
+                del self.products[i]
+                self.save()
+                return
+        raise ValueError(f'Product with url {url} not found')
+
     def set_price(self, product: Product, new_price: float) -> None:
         """Manually set price for ``product`` and record it in history."""
         self.update_price(product, new_price)
+
