@@ -1,11 +1,10 @@
 from threading import Thread
 import re
-import json
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, redirect, url_for, render_template_string, jsonify
 
-from price_tracker.shops.generic import parse_price, _find_price_in_json
+from price_tracker.shops.generic import parse_price
 
 from price_tracker.tracker import PriceTracker
 
@@ -214,41 +213,21 @@ def detect_selector():
 
     # Ignore matches located inside <script> or <style> tags
     element = None
-    price_value = None
     for el in soup.find_all(string=pattern):
         if el.parent.name not in ('script', 'style'):
-            try:
-                price_value = parse_price(str(el))
-            except Exception:
-                continue
             element = el
             break
+    if not element:
+        return '', 404
+    elem = element.parent
+    selector = elem.name
+    if elem.get('id'):
+        selector += f"#{elem.get('id')}"
+    elif elem.get('class'):
+        selector += '.' + '.'.join(elem.get('class'))
 
-    if element is not None:
-        elem = element.parent
-        selector = elem.name
-        if elem.get('id'):
-            selector += f"#{elem.get('id')}"
-        elif elem.get('class'):
-            selector += '.' + '.'.join(elem.get('class'))
-        return jsonify({'selector': selector, 'price': price_value})
-
-    # Fallback to JSON-LD scripts
-    for script in soup.find_all('script', type='application/ld+json'):
-        if not script.string:
-            continue
-        try:
-            data = json.loads(script.string)
-        except Exception:
-            continue
-        val = _find_price_in_json(data)
-        if val is not None:
-            return jsonify({
-                'selector': "script[type='application/ld+json']",
-                'price': parse_price(str(val))
-            })
-
-    return '', 404
+    price_value = parse_price(str(element))
+    return jsonify({'selector': selector, 'price': price_value})
 
 if __name__ == '__main__':
     app.run()
