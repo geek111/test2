@@ -32,5 +32,26 @@ class GenericShop(ShopModule):
         element = soup.select_one(self.selector)
         if element is None:
             raise ValueError(f'Price element not found using selector {self.selector}')
-        price_text = element.text
-        return parse_price(price_text)
+
+        price_text = (element.text or '').strip()
+        if price_text:
+            try:
+                price = parse_price(price_text)
+                if price:
+                    return price
+            except Exception:
+                pass
+
+        # Fallback: some shops store the price in data attributes like
+        # "data-product-gtm" as JSON with fields such as "current_price".
+        for attr in ('data-product-gtm', 'data-product', 'data-gtm'):
+            attr_val = element.get(attr)
+            if not attr_val:
+                continue
+            match = re.search(r'"current_price"\s*:\s*"?([0-9.,]+)"?', attr_val)
+            if not match:
+                match = re.search(r'"price"\s*:\s*"?([0-9.,]+)"?', attr_val)
+            if match:
+                return parse_price(match.group(1))
+
+        raise ValueError('Price not found in element')
