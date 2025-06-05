@@ -2,13 +2,9 @@ from threading import Thread
 from flask import Flask, request, redirect, url_for, render_template_string
 
 from price_tracker.tracker import PriceTracker
-from price_tracker.shops.shop_a import ShopA
-from price_tracker.shops.shop_b import ShopB
 
 app = Flask(__name__)
-tracker = PriceTracker('products.json', interval=3600)
-tracker.register_shop('shopa', ShopA())
-tracker.register_shop('shopb', ShopB())
+tracker = PriceTracker('products.json', interval=3600, shops_path='shops.json')
 
 # start background price checking
 def start_background_tracker():
@@ -20,6 +16,7 @@ INDEX_TEMPLATE = """
 <!doctype html>
 <title>Price Tracker</title>
 <h1>Tracked Products</h1>
+<p><a href="{{ url_for('list_shops') }}">Manage shops</a></p>
 <ul>
   {% for p in products %}
   <li>
@@ -53,6 +50,37 @@ INDEX_TEMPLATE = """
 </p>
 """
 
+SHOPS_TEMPLATE = """
+<!doctype html>
+<title>Shops</title>
+<h1>Registered Shops</h1>
+<ul>
+  {% for name, selector in shops.items() %}
+  <li>{{ name }} - {{ selector }}
+      <a href="{{ url_for('edit_shop_form', name=name) }}">Edit</a>
+  </li>
+  {% endfor %}
+</ul>
+<h2>Add Shop</h2>
+<form method="post" action="{{ url_for('add_shop') }}">
+  Name: <input name="name"><br>
+  Selector: <input name="selector"><br>
+  <button type="submit">Add</button>
+</form>
+<p><a href="{{ url_for('index') }}">Back</a></p>
+"""
+
+EDIT_SHOP_TEMPLATE = """
+<!doctype html>
+<title>Edit Shop</title>
+<h1>Edit {{ name }}</h1>
+<form method="post" action="{{ url_for('update_shop', name=name) }}">
+  CSS selector: <input name="selector" value="{{ selector }}"><br>
+  <button type="submit">Save</button>
+</form>
+<p><a href="{{ url_for('list_shops') }}">Back to shops</a></p>
+"""
+
 @app.route('/')
 def index():
     paused = getattr(tracker, 'paused', False)
@@ -64,6 +92,32 @@ def index():
         shops=tracker.shops.keys(),
         paused=paused,
     )
+
+
+@app.route('/shops')
+def list_shops():
+    shops = {name: s.selector for name, s in tracker.shop_store.shops.items()}
+    return render_template_string(SHOPS_TEMPLATE, shops=shops)
+
+
+@app.route('/shops/add', methods=['POST'])
+def add_shop():
+    tracker.add_shop(request.form['name'], request.form['selector'])
+    return redirect(url_for('list_shops'))
+
+
+@app.route('/shops/edit/<name>')
+def edit_shop_form(name):
+    shop = tracker.shop_store.shops.get(name)
+    if not shop:
+        return redirect(url_for('list_shops'))
+    return render_template_string(EDIT_SHOP_TEMPLATE, name=name, selector=shop.selector)
+
+
+@app.route('/shops/update/<name>', methods=['POST'])
+def update_shop(name):
+    tracker.update_shop(name, request.form['selector'])
+    return redirect(url_for('list_shops'))
 
 @app.route('/add', methods=['POST'])
 def add_product():

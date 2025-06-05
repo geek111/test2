@@ -23,10 +23,12 @@ python3 web.py
 ```
 
 Domyślnie lista produktów znajduje się w pliku `products.json`. Moduły sklepów znajdują się w katalogu `price_tracker/shops` i dziedziczą po klasie `ShopModule`.
+Konfiguracja sklepów przechowywana jest w pliku `shops.json` i może być modyfikowana z poziomu interfejsu WWW.
 
 ### Zarządzanie przez Web GUI
 
 - Dodawanie i usuwanie produktów odbywa się z poziomu listy produktów. Każdy wiersz ma przycisk **Delete**.
+- Dodawanie i edycja sklepów dostępna jest poprzez link **Manage shops**.
 - Ceny można sprawdzić ręcznie przez link **Check prices now**.
 - Automatyczne sprawdzanie można tymczasowo wstrzymać lub wznowić przyciskami **Pause checking** i **Resume checking**.
   Stan wstrzymania przechowywany jest w atrybucie ``PriceTracker.paused``.
