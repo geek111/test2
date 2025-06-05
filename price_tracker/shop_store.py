@@ -43,3 +43,14 @@ class ShopStore:
             raise ValueError(f'Shop {name} not found')
         del self.shops[name]
         self.save()
+
+    def rename(self, old_name: str, new_name: str) -> None:
+        """Rename a shop definition."""
+        if old_name not in self.shops:
+            raise ValueError(f'Shop {old_name} not found')
+        if new_name in self.shops:
+            raise ValueError(f'Shop {new_name} already exists')
+        shop = self.shops.pop(old_name)
+        shop.name = new_name
+        self.shops[new_name] = shop
+        self.save()

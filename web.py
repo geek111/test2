@@ -58,6 +58,9 @@ SHOPS_TEMPLATE = """
   {% for name, selector in shops.items() %}
   <li>{{ name }} - {{ selector }}
       <a href="{{ url_for('edit_shop_form', name=name) }}">Edit</a>
+      <form method="post" action="{{ url_for('delete_shop', name=name) }}" style="display:inline">
+        <button type="submit">Delete</button>
+      </form>
   </li>
   {% endfor %}
 </ul>
@@ -75,8 +78,12 @@ EDIT_SHOP_TEMPLATE = """
 <title>Edit Shop</title>
 <h1>Edit {{ name }}</h1>
 <form method="post" action="{{ url_for('update_shop', name=name) }}">
+  Name: <input name="new_name" value="{{ name }}"><br>
   CSS selector: <input name="selector" value="{{ selector }}"><br>
   <button type="submit">Save</button>
+</form>
+<form method="post" action="{{ url_for('delete_shop', name=name) }}">
+  <button type="submit">Delete shop</button>
 </form>
 <p><a href="{{ url_for('list_shops') }}">Back to shops</a></p>
 """
@@ -116,7 +123,15 @@ def edit_shop_form(name):
 
 @app.route('/shops/update/<name>', methods=['POST'])
 def update_shop(name):
-    tracker.update_shop(name, request.form['selector'])
+    new_name = request.form.get('new_name', name)
+    selector = request.form['selector']
+    tracker.rename_shop(name, new_name, selector)
+    return redirect(url_for('list_shops'))
+
+
+@app.route('/shops/delete/<name>', methods=['POST'])
+def delete_shop(name):
+    tracker.remove_shop(name)
     return redirect(url_for('list_shops'))
 
 @app.route('/add', methods=['POST'])

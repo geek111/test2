@@ -40,6 +40,32 @@ class PriceTracker:
         self.register_shop(name, GenericShop(selector))
         self.shop_store.update(ShopDef(name=name, selector=selector))
 
+    def rename_shop(self, old_name: str, new_name: str, selector: str) -> None:
+        """Rename a shop and optionally update its selector."""
+        if old_name == new_name:
+            self.update_shop(old_name, selector)
+            return
+
+        if old_name not in self.shop_store.shops:
+            raise ValueError(f'Shop {old_name} not found')
+        if new_name in self.shop_store.shops:
+            raise ValueError(f'Shop {new_name} already exists')
+
+        # remove old definition and register new one
+        self.shop_store.remove(old_name)
+        self.register_shop(new_name, GenericShop(selector))
+        self.shop_store.add(ShopDef(name=new_name, selector=selector))
+
+        # update in-memory registry
+        if old_name in self.shops:
+            self.shops[new_name] = self.shops.pop(old_name)
+
+        # update products referencing the old shop name
+        for product in self.store.products:
+            if product.shop == old_name:
+                product.shop = new_name
+        self.store.save()
+
     def remove_shop(self, name: str) -> None:
         """Remove a shop definition and unregister it."""
         self.shop_store.remove(name)
