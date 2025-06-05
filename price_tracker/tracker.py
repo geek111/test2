@@ -72,9 +72,11 @@ class PriceTracker:
         if name in self.shops:
             del self.shops[name]
 
-    def add_product(self, name: str, url: str, shop: str, selector: str) -> None:
+    def add_product(self, name: str, url: str, shop: str, selector: str,
+                    price: float = 0.0) -> None:
         product = Product(name=name, url=url, shop=shop, selector=selector,
-                          price_history=[], last_price=0.0)
+                          price_history=[price] if price else [],
+                          last_price=price)
         self.store.add(product)
 
     def remove_product(self, url: str) -> None:
