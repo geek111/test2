@@ -17,12 +17,6 @@ def parse_price(text: str) -> float:
     cleaned = cleaned.replace("\xa0", "").replace(" ", "")
     cleaned = cleaned.replace(",", ".")
     cleaned = re.sub(r"[^0-9.\-]", "", cleaned)
-    cleaned = cleaned.strip(".")
-    if cleaned.count(".") > 1:
-        last = cleaned.rfind(".")
-        cleaned = cleaned[:last].replace(".", "") + cleaned[last:]
-    if not cleaned or cleaned == ".":
-        raise ValueError(f"Could not parse price: {text}")
     return float(cleaned)
 
 class GenericShop(ShopModule):
