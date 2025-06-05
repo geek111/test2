@@ -195,7 +195,13 @@ def detect_selector():
 
     soup = BeautifulSoup(resp.text, 'html.parser')
     pattern = re.compile(r'\d+[\.,]\d+\s*(?:zł|pln|eur|€|usd|\$)?', re.I)
-    element = soup.find(string=pattern)
+
+    # Ignore matches located inside <script> or <style> tags
+    element = None
+    for el in soup.find_all(string=pattern):
+        if el.parent.name not in ('script', 'style'):
+            element = el
+            break
     if not element:
         return '', 404
     elem = element.parent
