@@ -55,11 +55,14 @@ INDEX_TEMPLATE = """
 
 @app.route('/')
 def index():
+    paused = getattr(tracker, 'paused', False)
+    if not hasattr(tracker, 'paused'):
+        app.logger.warning("PriceTracker instance missing 'paused' attribute")
     return render_template_string(
         INDEX_TEMPLATE,
         products=tracker.store.products,
         shops=tracker.shops.keys(),
-        paused=tracker.paused,
+        paused=paused,
     )
 
 @app.route('/add', methods=['POST'])
