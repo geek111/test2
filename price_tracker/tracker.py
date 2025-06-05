@@ -2,6 +2,9 @@ import time
 from pathlib import Path
 from typing import Dict
 
+from .shop_store import ShopStore, ShopDef
+from .shops.generic import GenericShop
+
 from .products import Product, ProductStore
 from .notification import send_email
 from .shops.base import ShopModule
@@ -11,16 +14,37 @@ class PriceTracker:
     """Main application class."""
 
     def __init__(self, store_path: str, interval: int = 3600,
-                 email: str | None = None) -> None:
+                 email: str | None = None, shops_path: str = 'shops.json') -> None:
         self.store = ProductStore(Path(store_path))
+        self.shop_store = ShopStore(Path(shops_path))
         self.shops: Dict[str, ShopModule] = {}
         self.interval = interval
         self.email = email
         # flag used by ``run`` to control automatic price checks
         self.paused = False
 
+        # load shops defined in ``shops.json``
+        for name, shop_def in self.shop_store.shops.items():
+            self.register_shop(name, GenericShop(shop_def.selector))
+
     def register_shop(self, name: str, shop: ShopModule) -> None:
         self.shops[name] = shop
+
+    def add_shop(self, name: str, selector: str) -> None:
+        """Add a new shop defined by ``selector``."""
+        self.register_shop(name, GenericShop(selector))
+        self.shop_store.add(ShopDef(name=name, selector=selector))
+
+    def update_shop(self, name: str, selector: str) -> None:
+        """Update an existing shop."""
+        self.register_shop(name, GenericShop(selector))
+        self.shop_store.update(ShopDef(name=name, selector=selector))
+
+    def remove_shop(self, name: str) -> None:
+        """Remove a shop definition and unregister it."""
+        self.shop_store.remove(name)
+        if name in self.shops:
+            del self.shops[name]
 
     def add_product(self, name: str, url: str, shop: str) -> None:
         product = Product(name=name, url=url, shop=shop,
