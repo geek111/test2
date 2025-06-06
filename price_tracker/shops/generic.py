@@ -61,7 +61,24 @@ class GenericShop(ShopModule):
         soup = BeautifulSoup(response.text, 'html.parser')
         element = soup.select_one(self.selector)
 
-        price_text = (element.text or '').strip() if element else ''
+        # If selector points to a JSON-LD <script>, parse it as JSON first
+        if (
+            element
+            and element.name == 'script'
+            and element.get('type') == 'application/ld+json'
+        ):
+            if element.string:
+                try:
+                    data = json.loads(element.string)
+                    val = _find_price_in_json(data)
+                    if val is not None:
+                        return parse_price(str(val))
+                except Exception:
+                    pass
+            price_text = ''
+        else:
+            price_text = (element.text or '').strip() if element else ''
+
         if price_text:
             try:
                 price = parse_price(price_text)

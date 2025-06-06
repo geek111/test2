@@ -29,6 +29,9 @@ Konfiguracja sklepów przechowywana jest w pliku `shops.json` i może być modyf
 
 Aplikacja obsługuje ceny zapisywane w formacie europejskim, np. `1 234,56 zł`.
 Funkcja `parse_price` usuwa symbole walut oraz separatory tysięcy (spacje lub
+  Jeżeli selektor wskazuje bezpośrednio na taki tag `<script>`,
+  zawartość jest interpretowana jako JSON, a nie zwykły tekst,
+  co zapobiega odczytywaniu numerów identyfikacyjnych jako ceny.
 kropki), zamienia przecinek na kropkę i usuwa ewentualne znaki interpunkcyjne
 po wartości. Dzięki temu poprawnie działa zarówno dla notacji amerykańskiej,
 jak i europejskiej. Dodatkowo aplikacja potrafi pobrać cenę zapisaną w
