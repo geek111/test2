@@ -15,26 +15,16 @@ def parse_price(text: str) -> float:
     """
     cleaned = text.strip()
     cleaned = re.sub(r"(?i)(zł|pln|eur|euro|usd|\$|€|gbp|£)", "", cleaned)
-    cleaned = cleaned.replace("\xa0", " ")
-    match = re.search(r"-?\d[\d .,]*\d", cleaned)
-    if not match:
+    cleaned = cleaned.replace("\xa0", "").replace(" ", "")
+    cleaned = cleaned.replace(",", ".")
+    cleaned = re.sub(r"[^0-9.\-]", "", cleaned)
+    cleaned = cleaned.strip(".")
+    if cleaned.count(".") > 1:
+        last = cleaned.rfind(".")
+        cleaned = cleaned[:last].replace(".", "") + cleaned[last:]
+    if not cleaned or cleaned == ".":
         raise ValueError(f"Could not parse price: {text}")
-
-    number = match.group(0)
-    if " " in number:
-        parts = number.split()
-        if len(parts) == 2 and len(parts[1]) == 2 and parts[0].isdigit() and parts[1].isdigit():
-            number = parts[0] + "." + parts[1]
-        else:
-            number = "".join(parts)
-    number = number.replace(" ", "").replace(",", ".")
-    number = re.sub(r"[^0-9.\-]", "", number)
-    number = number.strip(".")
-    if number.count(".") > 1:
-        last = number.rfind(".")
-        number = number[:last].replace(".", "") + number[last:]
-
-    return float(number)
+    return float(cleaned)
 
 
 def _find_price_in_json(data):
@@ -71,24 +61,7 @@ class GenericShop(ShopModule):
         soup = BeautifulSoup(response.text, 'html.parser')
         element = soup.select_one(self.selector)
 
-        # If selector points to a JSON-LD <script>, parse it as JSON first
-        if (
-            element
-            and element.name == 'script'
-            and element.get('type') == 'application/ld+json'
-        ):
-            if element.string:
-                try:
-                    data = json.loads(element.string)
-                    val = _find_price_in_json(data)
-                    if val is not None:
-                        return parse_price(str(val))
-                except Exception:
-                    pass
-            price_text = ''
-        else:
-            price_text = (element.text or '').strip() if element else ''
-
+        price_text = (element.text or '').strip() if element else ''
         if price_text:
             try:
                 price = parse_price(price_text)

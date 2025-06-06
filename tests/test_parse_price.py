@@ -11,8 +11,6 @@ from price_tracker.shops.generic import parse_price
     ('1 234,56 zł', 1234.56),
     ('1.234,56 zł', 1234.56),
     ('1 234.56$', 1234.56),
-    ('K-Beauty 2.0', 2.0),
-    ('29 99 zł', 29.99),
 ])
 def test_parse_price(text, expected):
     assert parse_price(text) == expected

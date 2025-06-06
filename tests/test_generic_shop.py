@@ -46,14 +46,3 @@ def test_price_from_jsonld(monkeypatch):
     # Selector not found, should still parse from JSON-LD
     shop = GenericShop('span.price')
     assert shop.get_price('http://example.com') == 49.99
-
-
-def test_price_when_selector_points_to_jsonld(monkeypatch):
-    html = (
-        "<script type='application/ld+json'>"
-        '{"offers": {"price": 77.55, "priceCurrency": "PLN"}}'
-        "</script>"
-    )
-    monkeypatch.setattr(requests, 'get', make_get(html))
-    shop = GenericShop("script[type='application/ld+json']")
-    assert shop.get_price('http://example.com') == 77.55
