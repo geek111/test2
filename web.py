@@ -210,22 +210,6 @@ def detect_selector():
         return str(exc), 400
 
     soup = BeautifulSoup(resp.text, 'html.parser')
-
-    # First try JSON-LD scripts which often contain the exact price
-    for script in soup.find_all('script', type='application/ld+json'):
-        if not script.string:
-            continue
-        try:
-            data = json.loads(script.string)
-        except Exception:
-            continue
-        val = _find_price_in_json(data)
-        if val is not None:
-            return jsonify({
-                'selector': "script[type='application/ld+json']",
-                'price': parse_price(str(val))
-            })
-
     pattern = re.compile(r'\d+[\.,]\d+\s*(?:zł|pln|eur|€|usd|\$)?', re.I)
 
     # Ignore matches located inside <script> or <style> tags
