@@ -4,7 +4,7 @@ Przykładowa aplikacja w Pythonie pozwalająca na monitorowanie cen w różnych 
 
 ## Instalacja zależności
 
-Wymagane biblioteki są zdefiniowane w pliku `requirements.txt`. Przed uruchomieniem aplikacji zainstaluj je poleceniem:
+Wymagane biblioteki (m.in. Flask, requests i BeautifulSoup) są zdefiniowane w pliku `requirements.txt`. Przed uruchomieniem aplikacji zainstaluj je poleceniem:
 
 ```bash
 pip install -r requirements.txt
@@ -28,9 +28,19 @@ Konfiguracja sklepów przechowywana jest w pliku `shops.json` i może być modyf
 ### Format cen
 
 Aplikacja obsługuje ceny zapisywane w formacie europejskim, np. `1 234,56 zł`.
-Funkcja `parse_price` usuwa symbole walut, spacje oddzielające tysiące i
-zamienia przecinek na kropkę, dzięki czemu poprawnie działa zarówno dla
-notacji amerykańskiej, jak i europejskiej.
+Funkcja `parse_price` usuwa symbole walut oraz separatory tysięcy (spacje lub
+kropki). Rozpoznaje również przypadki, gdy część dziesiętna jest oddzielona
+od wartości głównej spacją (np. `29 99 zł`). W takich sytuacjach łączy oba
+fragmenty w jedną liczbę. Następnie przecinek zamienia na kropkę i usuwa
+ewentualne znaki interpunkcyjne po wartości. Dzięki temu poprawnie działa
+zarówno dla notacji amerykańskiej, jak i europejskiej. Dodatkowo aplikacja
+potrafi pobrać cenę zapisaną w
+  skryptach JSON‑LD (`<script type="application/ld+json">`).
+  Wyszukiwanie w takich skryptach wykonywane jest priorytetowo,
+  dzięki czemu unikamy przypadkowego dopasowania liczb niezwiązanych z ceną.
+  Jeżeli selektor wskazuje bezpośrednio na taki tag `<script>`,
+  zawartość jest interpretowana jako JSON, a nie zwykły tekst,
+  co zapobiega odczytywaniu numerów identyfikacyjnych jako ceny.
 
 ### Zarządzanie przez Web GUI
 

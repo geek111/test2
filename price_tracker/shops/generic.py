@@ -1,4 +1,5 @@
 import re
+import json
 import requests
 from bs4 import BeautifulSoup
 
@@ -14,10 +15,49 @@ def parse_price(text: str) -> float:
     """
     cleaned = text.strip()
     cleaned = re.sub(r"(?i)(zł|pln|eur|euro|usd|\$|€|gbp|£)", "", cleaned)
-    cleaned = cleaned.replace("\xa0", "").replace(" ", "")
-    cleaned = cleaned.replace(",", ".")
-    cleaned = re.sub(r"[^0-9.\-]", "", cleaned)
-    return float(cleaned)
+    cleaned = cleaned.replace("\xa0", " ")
+    match = re.search(r"-?\d[\d .,]*\d", cleaned)
+    if not match:
+        raise ValueError(f"Could not parse price: {text}")
+
+    number = match.group(0)
+    if " " in number:
+        parts = number.split()
+        if len(parts) == 2 and len(parts[1]) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            number = parts[0] + "." + parts[1]
+        else:
+            number = "".join(parts)
+    number = number.replace(" ", "").replace(",", ".")
+    number = re.sub(r"[^0-9.\-]", "", number)
+    number = number.strip(".")
+    if number.count(".") > 1:
+        last = number.rfind(".")
+        number = number[:last].replace(".", "") + number[last:]
+
+    return float(number)
+
+
+def _find_price_in_json(data):
+    """Recursively search for price fields in a JSON object."""
+    if isinstance(data, dict):
+        for key in (
+            "price",
+            "current_price",
+            "lowPrice",
+            "highPrice",
+        ):
+            if key in data and isinstance(data[key], (str, int, float)):
+                return data[key]
+        for value in data.values():
+            found = _find_price_in_json(value)
+            if found is not None:
+                return found
+    elif isinstance(data, list):
+        for item in data:
+            found = _find_price_in_json(item)
+            if found is not None:
+                return found
+    return None
 
 class GenericShop(ShopModule):
     """Shop module defined by a CSS selector."""
@@ -30,10 +70,25 @@ class GenericShop(ShopModule):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         element = soup.select_one(self.selector)
-        if element is None:
-            raise ValueError(f'Price element not found using selector {self.selector}')
 
-        price_text = (element.text or '').strip()
+        # If selector points to a JSON-LD <script>, parse it as JSON first
+        if (
+            element
+            and element.name == 'script'
+            and element.get('type') == 'application/ld+json'
+        ):
+            if element.string:
+                try:
+                    data = json.loads(element.string)
+                    val = _find_price_in_json(data)
+                    if val is not None:
+                        return parse_price(str(val))
+                except Exception:
+                    pass
+            price_text = ''
+        else:
+            price_text = (element.text or '').strip() if element else ''
+
         if price_text:
             try:
                 price = parse_price(price_text)
@@ -44,14 +99,29 @@ class GenericShop(ShopModule):
 
         # Fallback: some shops store the price in data attributes like
         # "data-product-gtm" as JSON with fields such as "current_price".
-        for attr in ('data-product-gtm', 'data-product', 'data-gtm'):
-            attr_val = element.get(attr)
-            if not attr_val:
-                continue
-            match = re.search(r'"current_price"\s*:\s*"?([0-9.,]+)"?', attr_val)
-            if not match:
-                match = re.search(r'"price"\s*:\s*"?([0-9.,]+)"?', attr_val)
-            if match:
-                return parse_price(match.group(1))
+        if element:
+            for attr in ('data-product-gtm', 'data-product', 'data-gtm'):
+                attr_val = element.get(attr)
+                if not attr_val:
+                    continue
+                match = re.search(r'"current_price"\s*:\s*"?([0-9.,]+)"?', attr_val)
+                if not match:
+                    match = re.search(r'"price"\s*:\s*"?([0-9.,]+)"?', attr_val)
+                if match:
+                    return parse_price(match.group(1))
 
-        raise ValueError('Price not found in element')
+        # Fallback to JSON-LD scripts
+        for script in soup.find_all('script', type='application/ld+json'):
+            if not script.string:
+                continue
+            try:
+                data = json.loads(script.string)
+            except Exception:
+                continue
+            val = _find_price_in_json(data)
+            if val is not None:
+                return parse_price(str(val))
+
+        if element is None:
+            raise ValueError(f'Price element not found using selector {self.selector}')
+        raise ValueError('Price not found in element or JSON-LD')
