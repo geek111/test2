@@ -96,19 +96,17 @@ class PriceTracker:
         self.smtp_store.update(cfg)
 
     def send_test_email(self, recipient: str) -> None:
-        """Send a test email exactly like a price drop alert."""
-        dummy = Product(
-            name='Test product',
-            url='http://example.com',
-            shop='',
-            selector='',
+        """Send a test email using current SMTP settings."""
+        cfg = self.smtp_store.config
+        send_email(
+            recipient,
+            'Test email from Price Tracker',
+            'This is a test message to confirm SMTP configuration.',
+            smtp_server=cfg.server,
+            smtp_port=cfg.port,
+            username=cfg.username,
+            password=cfg.password,
         )
-        prev_email = self.email
-        self.email = recipient
-        try:
-            self.notify_price_drop(dummy, 10.0, 5.0)
-        finally:
-            self.email = prev_email
 
     def check_prices(self) -> None:
         for product in self.store.products:

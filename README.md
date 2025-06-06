@@ -48,9 +48,8 @@ Parametry serwera SMTP używanego do wysyłania powiadomień można zmienić
 bezpośrednio z poziomu interfejsu WWW. W menu na górze dostępny jest link
 **SMTP settings**, który prowadzi do formularza umożliwiającego podanie adresu
 serwera, portu oraz danych uwierzytelniających. Na stronie dostępny jest też
-formularz umożliwiający wysłanie wiadomości testowej na wybrany adres.
-Test wysyła wiadomość w takiej samej postaci, w jakiej przychodzą alerty o
-obniżce cen, co pozwala zweryfikować konfigurację w praktyce.
+formularz umożliwiający wysłanie wiadomości testowej na wybrany adres,
+dzięki czemu można sprawdzić poprawność konfiguracji.
 
 ### Rozwiązywanie problemów
 
