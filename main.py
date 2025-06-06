@@ -2,7 +2,8 @@ from price_tracker.tracker import PriceTracker
 
 
 def main() -> None:
-    tracker = PriceTracker('products.json', interval=3600, shops_path='shops.json')
+    tracker = PriceTracker('products.json', interval=3600,
+                          shops_path='shops.json', smtp_path='smtp.json')
 
     # Example of adding a product
     # tracker.add_product('Example Product', 'http://example.com/product', 'shopa')

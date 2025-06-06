@@ -8,15 +8,18 @@ from .shops.generic import GenericShop
 from .products import Product, ProductStore
 from .notification import send_email
 from .shops.base import ShopModule
+from .smtp_config import SmtpConfig, SmtpConfigStore
 
 
 class PriceTracker:
     """Main application class."""
 
     def __init__(self, store_path: str, interval: int = 3600,
-                 email: str | None = None, shops_path: str = 'shops.json') -> None:
+                 email: str | None = None, shops_path: str = 'shops.json',
+                 smtp_path: str = 'smtp.json') -> None:
         self.store = ProductStore(Path(store_path))
         self.shop_store = ShopStore(Path(shops_path))
+        self.smtp_store = SmtpConfigStore(Path(smtp_path))
         self.shops: Dict[str, ShopModule] = {}
         self.interval = interval
         self.email = email
@@ -83,6 +86,28 @@ class PriceTracker:
         """Remove a tracked product by URL."""
         self.store.remove(url)
 
+    def update_smtp_config(self, server: str, port: int,
+                           username: str | None,
+                           password: str | None) -> None:
+        """Update SMTP settings used for email notifications."""
+        cfg = SmtpConfig(server=server, port=port,
+                         username=username or None,
+                         password=password or None)
+        self.smtp_store.update(cfg)
+
+    def send_test_email(self, recipient: str) -> None:
+        """Send a test email using current SMTP settings."""
+        cfg = self.smtp_store.config
+        send_email(
+            recipient,
+            'Test email from Price Tracker',
+            'This is a test message to confirm SMTP configuration.',
+            smtp_server=cfg.server,
+            smtp_port=cfg.port,
+            username=cfg.username,
+            password=cfg.password,
+        )
+
     def check_prices(self) -> None:
         for product in self.store.products:
             shop = GenericShop(product.selector)
@@ -104,7 +129,16 @@ class PriceTracker:
         msg = (f'Price drop for {product.name}: {old} -> {new}\n'
                f'URL: {product.url}')
         if self.email:
-            send_email(self.email, f'Price drop: {product.name}', msg)
+            cfg = self.smtp_store.config
+            send_email(
+                self.email,
+                f'Price drop: {product.name}',
+                msg,
+                smtp_server=cfg.server,
+                smtp_port=cfg.port,
+                username=cfg.username,
+                password=cfg.password,
+            )
         else:
             print(msg)
 
