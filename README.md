@@ -42,6 +42,16 @@ skryptach JSON‑LD (`<script type="application/ld+json">`).
 - Automatyczne sprawdzanie można tymczasowo wstrzymać lub wznowić przyciskami **Pause checking** i **Resume checking**.
   Stan wstrzymania przechowywany jest w atrybucie ``PriceTracker.paused``.
 
+### Konfiguracja SMTP
+
+Parametry serwera SMTP używanego do wysyłania powiadomień można zmienić
+bezpośrednio z poziomu interfejsu WWW. W menu na górze dostępny jest link
+**SMTP settings**, który prowadzi do formularza umożliwiającego podanie adresu
+serwera, portu oraz danych uwierzytelniających. Na stronie dostępny jest też
+formularz umożliwiający wysłanie wiadomości testowej na wybrany adres.
+Test wysyła wiadomość w takiej samej postaci, w jakiej przychodzą alerty o
+obniżce cen, co pozwala zweryfikować konfigurację w praktyce.
+
 ### Rozwiązywanie problemów
 
 Jeśli podczas uruchamiania interfejsu WWW pojawi się błąd

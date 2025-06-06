@@ -10,7 +10,12 @@ from price_tracker.shops.generic import parse_price, _find_price_in_json
 from price_tracker.tracker import PriceTracker
 
 app = Flask(__name__)
-tracker = PriceTracker('products.json', interval=3600, shops_path='shops.json')
+tracker = PriceTracker(
+    'products.json',
+    interval=3600,
+    shops_path='shops.json',
+    smtp_path='smtp.json',
+)
 
 # start background price checking
 def start_background_tracker():
@@ -104,6 +109,43 @@ def pause():
 def resume():
     tracker.resume()
     return redirect(url_for('index'))
+
+
+@app.route('/smtp')
+def smtp_settings():
+    cfg = tracker.smtp_store.config
+    return render_template(
+        'smtp_settings.html',
+        server=cfg.server,
+        port=cfg.port,
+        username=cfg.username or '',
+        password=cfg.password or '',
+        status=request.args.get('status')
+    )
+
+
+@app.route('/smtp', methods=['POST'])
+def update_smtp_settings():
+    server = request.form.get('server', 'localhost')
+    port = int(request.form.get('port', 25))
+    username = request.form.get('username') or None
+    password = request.form.get('password') or None
+    tracker.update_smtp_config(server, port, username, password)
+    return redirect(url_for('smtp_settings', status='saved'))
+
+
+@app.route('/smtp/test', methods=['POST'])
+def send_test_email_route():
+    recipient = request.form.get('recipient')
+    if not recipient:
+        return redirect(url_for('smtp_settings'))
+    try:
+        tracker.send_test_email(recipient)
+        status = 'sent'
+    except Exception as exc:
+        app.logger.exception('Failed to send test email: %s', exc)
+        status = 'error'
+    return redirect(url_for('smtp_settings', status=status))
 
 
 @app.route('/detect_selector')
