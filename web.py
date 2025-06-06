@@ -232,16 +232,13 @@ def detect_selector():
     element = None
     price_value = None
     for el in soup.find_all(string=pattern):
-        if el.parent.name in ('script', 'style'):
-            continue
-        try:
-            price_value = parse_price(str(el))
-        except Exception:
-            continue
-        if price_value < 0:
-            continue
-        element = el
-        break
+        if el.parent.name not in ('script', 'style'):
+            try:
+                price_value = parse_price(str(el))
+            except Exception:
+                continue
+            element = el
+            break
 
     if element is not None:
         elem = element.parent
@@ -251,6 +248,21 @@ def detect_selector():
         elif elem.get('class'):
             selector += '.' + '.'.join(elem.get('class'))
         return jsonify({'selector': selector, 'price': price_value})
+
+    # Fallback to JSON-LD scripts
+    for script in soup.find_all('script', type='application/ld+json'):
+        if not script.string:
+            continue
+        try:
+            data = json.loads(script.string)
+        except Exception:
+            continue
+        val = _find_price_in_json(data)
+        if val is not None:
+            return jsonify({
+                'selector': "script[type='application/ld+json']",
+                'price': parse_price(str(val))
+            })
 
     return '', 404
 
