@@ -1,0 +1,71 @@
+{% extends 'layout.html' %}
+{% block title %}Tracked Products{% endblock %}
+{% block content %}
+  <h1 class="mb-4">Tracked Products</h1>
+  <ul class="list-group mb-4">
+    {% for p in products %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>{{ p.name }}</strong> - {{ p.last_price }} ({{ p.shop }})
+      </div>
+      <form method="post" action="{{ url_for('delete_product') }}" class="m-0">
+        <input type="hidden" name="url" value="{{ p.url }}">
+        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <h2 class="mb-3">Add Product</h2>
+  <form method="post" action="{{ url_for('add_product') }}" class="mb-4">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input name="name" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">URL</label>
+      <input name="url" id="url" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">CSS selector</label>
+      <div class="input-group">
+        <input name="selector" id="selector" class="form-control">
+        <button type="button" class="btn btn-outline-secondary" onclick="detectSelector()">Detect</button>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Price</label>
+      <input name="price" id="price" readonly class="form-control">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Shop</label>
+      <select name="shop" class="form-select">
+        {% for s in shops %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Add</button>
+  </form>
+  <p><a class="btn btn-outline-secondary" href="{{ url_for('check_now') }}">Check prices now</a></p>
+  <p>
+    {% if paused %}
+    <a class="btn btn-success" href="{{ url_for('resume') }}">Resume checking</a>
+    {% else %}
+    <a class="btn btn-warning" href="{{ url_for('pause') }}">Pause checking</a>
+    {% endif %}
+  </p>
+  <script>
+  function detectSelector() {
+    const url = document.getElementById('url').value;
+    fetch('/detect_selector?url=' + encodeURIComponent(url))
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('selector').value = data.selector;
+        if (data.price !== undefined) {
+          document.getElementById('price').value = data.price;
+        }
+      })
+      .catch(() => alert('Failed to detect selector'));
+  }
+  </script>
+{% endblock %}

@@ -3,7 +3,7 @@ import re
 import json
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request, redirect, url_for, render_template_string, jsonify
+from flask import Flask, request, redirect, url_for, render_template, jsonify
 
 from price_tracker.shops.generic import parse_price, _find_price_in_json
 
@@ -18,106 +18,14 @@ def start_background_tracker():
 
 start_background_tracker()
 
-INDEX_TEMPLATE = """
-<!doctype html>
-<title>Price Tracker</title>
-<h1>Tracked Products</h1>
-<p><a href="{{ url_for('list_shops') }}">Manage shops</a></p>
-<ul>
-  {% for p in products %}
-  <li>
-    {{ p.name }} - {{ p.last_price }} ({{ p.shop }})
-    <form method="post" action="{{ url_for('delete_product') }}" style="display:inline">
-      <input type="hidden" name="url" value="{{ p.url }}">
-      <button type="submit">Delete</button>
-    </form>
-  </li>
-  {% endfor %}
-</ul>
-<h2>Add Product</h2>
-<form method="post" action="{{ url_for('add_product') }}">
-  Name: <input name="name"><br>
-  URL: <input name="url" id="url"><br>
-  CSS selector: <input name="selector" id="selector">
-  <button type="button" onclick="detectSelector()">Pobierz selector</button><br>
-  Price: <input name="price" id="price" readonly><br>
-  Shop:
-  <select name="shop">
-    {% for s in shops %}
-    <option value="{{ s }}">{{ s }}</option>
-    {% endfor %}
-  </select>
-  <button type="submit">Add</button>
-</form>
-<p><a href="{{ url_for('check_now') }}">Check prices now</a></p>
-<p>
-  {% if paused %}
-  <a href="{{ url_for('resume') }}">Resume checking</a>
-  {% else %}
-  <a href="{{ url_for('pause') }}">Pause checking</a>
-  {% endif %}
-</p>
-<script>
-function detectSelector() {
-  const url = document.getElementById('url').value;
-  fetch('/detect_selector?url=' + encodeURIComponent(url))
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('selector').value = data.selector;
-      if (data.price !== undefined) {
-        document.getElementById('price').value = data.price;
-      }
-    })
-    .catch(() => alert('Failed to detect selector'));
-}
-</script>
-"""
-
-SHOPS_TEMPLATE = """
-<!doctype html>
-<title>Shops</title>
-<h1>Registered Shops</h1>
-<ul>
-  {% for name, selector in shops.items() %}
-  <li>{{ name }} - {{ selector }}
-      <a href="{{ url_for('edit_shop_form', name=name) }}">Edit</a>
-      <form method="post" action="{{ url_for('delete_shop', name=name) }}" style="display:inline">
-        <button type="submit">Delete</button>
-      </form>
-  </li>
-  {% endfor %}
-</ul>
-<h2>Add Shop</h2>
-<form method="post" action="{{ url_for('add_shop') }}">
-  Name: <input name="name"><br>
-  Selector: <input name="selector"><br>
-  <button type="submit">Add</button>
-</form>
-<p><a href="{{ url_for('index') }}">Back</a></p>
-"""
-
-EDIT_SHOP_TEMPLATE = """
-<!doctype html>
-<title>Edit Shop</title>
-<h1>Edit {{ name }}</h1>
-<form method="post" action="{{ url_for('update_shop', name=name) }}">
-  Name: <input name="new_name" value="{{ name }}"><br>
-  CSS selector: <input name="selector" value="{{ selector }}"><br>
-  <button type="submit">Save</button>
-</form>
-<form method="post" action="{{ url_for('delete_shop', name=name) }}">
-  <button type="submit">Delete shop</button>
-</form>
-<p><a href="{{ url_for('list_shops') }}">Back to shops</a></p>
-"""
 
 @app.route('/')
 def index():
     paused = getattr(tracker, 'paused', False)
     if not hasattr(tracker, 'paused'):
         app.logger.warning("PriceTracker instance missing 'paused' attribute")
-    return render_template_string(
-        INDEX_TEMPLATE,
+    return render_template(
+        'index.html',
         products=tracker.store.products,
         shops=tracker.shops.keys(),
         paused=paused,
@@ -127,7 +35,7 @@ def index():
 @app.route('/shops')
 def list_shops():
     shops = {name: s.selector for name, s in tracker.shop_store.shops.items()}
-    return render_template_string(SHOPS_TEMPLATE, shops=shops)
+    return render_template('shops.html', shops=shops)
 
 
 @app.route('/shops/add', methods=['POST'])
@@ -141,7 +49,7 @@ def edit_shop_form(name):
     shop = tracker.shop_store.shops.get(name)
     if not shop:
         return redirect(url_for('list_shops'))
-    return render_template_string(EDIT_SHOP_TEMPLATE, name=name, selector=shop.selector)
+    return render_template('edit_shop.html', name=name, selector=shop.selector)
 
 
 @app.route('/shops/update/<name>', methods=['POST'])
